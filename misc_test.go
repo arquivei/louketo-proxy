@@ -56,6 +56,28 @@ func TestRedirectToAuthorizationWith303Enabled(t *testing.T) {
 	newFakeProxy(cfg).RunTests(t, requests)
 }
 
+func TestUnathorizedForAjax(t *testing.T) {
+	c := newFakeKeycloakConfig()
+	c.DetectAjax = true
+	requests := []fakeRequest{
+		{
+			URI:       "/admin",
+			Redirects: false,
+			Headers: map[string]string{
+				"X-Requested-With": "XMLHttpRequest",
+			},
+			ExpectedCode: http.StatusUnauthorized,
+		},
+		{
+			URI:              "/admin",
+			Redirects:        true,
+			ExpectedLocation: "/oauth/authorize?state",
+			ExpectedCode:     http.StatusSeeOther,
+		},
+	}
+	newFakeProxy(c).RunTests(t, requests)
+}
+
 func TestRedirectToAuthorizationSkipToken(t *testing.T) {
 	requests := []fakeRequest{
 		{URI: "/admin", ExpectedCode: http.StatusUnauthorized},

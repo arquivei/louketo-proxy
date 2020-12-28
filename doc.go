@@ -310,6 +310,8 @@ type Config struct {
 
 	// NoRedirects informs we should hand back a 401 not a redirect
 	NoRedirects bool `json:"no-redirects" yaml:"no-redirects" usage:"do not have back redirects when no authentication is present, 401 them"`
+	// DetectAjax enables NoRedirects for requests with a `X-Requested-With: XMLHttpRequest` header
+	DetectAjax bool `json:"detect-ajax" yaml:"detect-ajax" usage:"do not have back redirects when no header X-Requested-With has XMLHttpRequest as value, 401 them"`
 	// SkipTokenVerification tells the service to skipp verifying the access token - for testing purposes
 	SkipTokenVerification bool `json:"skip-token-verification" yaml:"skip-token-verification" usage:"TESTING ONLY; bypass token verification, only expiration and roles enforced"`
 	// UpstreamKeepalives specifies whether we use keepalives on the upstream

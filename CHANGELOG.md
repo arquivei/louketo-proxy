@@ -1,3 +1,7 @@
+### **2.4.0**
+
+FEATURES:
+* Added the `detect-ajax` configuration to prevent redirection for requests with a `X-Requested-With: XMLHttpRequest` header
 
 #### **2.3.0**
 

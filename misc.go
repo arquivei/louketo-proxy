@@ -91,7 +91,7 @@ func (r *oauthProxy) redirectToURL(url string, w http.ResponseWriter, req *http.
 
 // redirectToAuthorization redirects the user to authorization handler
 func (r *oauthProxy) redirectToAuthorization(w http.ResponseWriter, req *http.Request) context.Context {
-	if r.config.NoRedirects {
+	if r.config.NoRedirects || (r.config.DetectAjax && isAjax(req)) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return r.revokeProxy(w, req)
 	}
@@ -128,4 +128,8 @@ func (r *oauthProxy) getAccessCookieExpiration(refresh string) time.Duration {
 	}
 
 	return duration
+}
+
+func isAjax(req *http.Request) bool {
+	return req.Header.Get("X-Requested-With") == "XMLHttpRequest"
 }
