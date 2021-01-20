@@ -77,7 +77,7 @@ func (r *oauthProxy) oauthAuthorizationHandler(w http.ResponseWriter, req *http.
 
 	// step: set the access type of the session
 	accessType := oauth2.AccessTypeOnline
-	if containedIn("offline", r.config.Scopes) {
+	if containedIn("offline_access", r.config.Scopes) {
 		accessType = oauth2.AccessTypeOffline
 	}
 
