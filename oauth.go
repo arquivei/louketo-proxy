@@ -81,8 +81,13 @@ func getRefreshedToken(conf *oauth2.Config, t string) (jose.JWT, string, time.Ti
 		}
 		return jose.JWT{}, "", time.Time{}, time.Duration(0), err
 	}
-	refreshExpiresIn := time.Until(tkn.Expiry)
-	token, identity, err := parseToken(tkn.AccessToken)
+
+	refreshExpiresIn, err := getTokenTTL(tkn.RefreshToken)
+	if err != nil {
+		return jose.JWT{}, "", time.Time{}, time.Duration(0), err
+	}
+
+	token, identity, err := parseOIDCToken(tkn.AccessToken)
 	if err != nil {
 		return jose.JWT{}, "", time.Time{}, time.Duration(0), err
 	}
@@ -148,8 +153,8 @@ func getToken(config *oauth2.Config, grantType, code string) (*oauth2.Token, err
 	return token, err
 }
 
-// parseToken retrieves the user identity from the token
-func parseToken(t string) (jose.JWT, *oidc.Identity, error) {
+// parseOIDCToken retrieves the user identity from the token
+func parseOIDCToken(t string) (jose.JWT, *oidc.Identity, error) {
 	token, err := jose.ParseJWT(t)
 	if err != nil {
 		return jose.JWT{}, nil, err
@@ -164,4 +169,25 @@ func parseToken(t string) (jose.JWT, *oidc.Identity, error) {
 	}
 
 	return token, identity, nil
+}
+
+func getTokenTTL(t string) (time.Duration, error) {
+	token, err := jose.ParseJWT(t)
+	if err != nil {
+		return 0, err
+	}
+
+	claims, err := token.Claims()
+	if err != nil {
+		return 0, err
+	}
+
+	val, exists, err := claims.Int64Claim(claimExpiration)
+	if err != nil || !exists || val == 0 {
+		return 0, err
+	}
+
+	expiresIn := time.Until(time.Unix(val, 0))
+
+	return expiresIn, nil
 }

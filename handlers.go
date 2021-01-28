@@ -32,7 +32,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-oidc/oidc"
 	"golang.org/x/oauth2"
 
 	"github.com/go-chi/chi"
@@ -132,14 +131,14 @@ func (r *oauthProxy) oauthCallbackHandler(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	token, identity, err := parseToken(rawIDToken)
+	token, identity, err := parseOIDCToken(rawIDToken)
 	if err != nil {
 		r.log.Error("unable to parse id token for identity", zap.Error(err))
 		r.accessForbidden(w, req)
 		return
 	}
 
-	access, id, err := parseToken(resp.AccessToken)
+	access, id, err := parseOIDCToken(resp.AccessToken)
 	if err == nil {
 		token = access
 		identity = id
@@ -181,19 +180,11 @@ func (r *oauthProxy) oauthCallbackHandler(w http.ResponseWriter, req *http.Reque
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		// drop in the access token - cookie expiration = access token
-		r.dropAccessTokenCookie(req, w, accessToken, r.getAccessCookieExpiration(resp.RefreshToken))
 
-		var expiration time.Duration
-		// notes: not all idp refresh tokens are readable, google for example, so we attempt to decode into
-		// a jwt and if possible extract the expiration, else we default to 10 days
-		var ident *oidc.Identity
+		expiration := r.getRefreshExpiration(resp.RefreshToken)
 
-		if _, ident, err = parseToken(resp.RefreshToken); err != nil {
-			expiration = 0
-		} else {
-			expiration = time.Until(ident.ExpiresAt)
-		}
+		// drop in the access token - cookie expiration = refresh token
+		r.dropAccessTokenCookie(req, w, accessToken, expiration)
 
 		if r.useStore() {
 			// step: configure a ticket to identify the session without depending on dynamic tokens
@@ -257,7 +248,7 @@ func (r *oauthProxy) loginHandler(w http.ResponseWriter, req *http.Request) {
 		// @metric observe the time taken for a login request
 		oauthLatencyMetric.WithLabelValues("login").Observe(time.Since(start).Seconds())
 
-		_, identity, err := parseToken(token.AccessToken)
+		_, identity, err := parseOIDCToken(token.AccessToken)
 		if err != nil {
 			return "unable to decode the access token", http.StatusNotImplemented, err
 		}

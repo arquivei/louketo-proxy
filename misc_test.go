@@ -95,49 +95,49 @@ func assertAlmostEquals(t *testing.T, expected time.Duration, actual time.Durati
 	assert.True(t, delta < time.Duration(1)*time.Minute, "Diff should be less than a minute but delta is %s", delta)
 }
 
-func TestGetAccessCookieExpiration_NoExp(t *testing.T) {
+func TestGetRefreshExpiration_NoExp(t *testing.T) {
 	token := newTestToken("foo").getToken()
 	refreshToken := token.Encode()
 	c := newFakeKeycloakConfig()
-	c.AccessTokenDuration = time.Duration(1) * time.Hour
+	c.DefaultSessionDuration = time.Duration(1) * time.Hour
 	proxy := newFakeProxy(c).proxy
-	duration := proxy.getAccessCookieExpiration(refreshToken)
-	assertAlmostEquals(t, c.AccessTokenDuration, duration)
+	duration := proxy.getRefreshExpiration(refreshToken)
+	assertAlmostEquals(t, c.DefaultSessionDuration, duration)
 }
 
-func TestGetAccessCookieExpiration_ZeroExp(t *testing.T) {
+func TestGetRefreshExpiration_ZeroExp(t *testing.T) {
 	ft := newTestToken("foo")
 	ft.setExpiration(time.Unix(0, 0))
 	token := ft.getToken()
 	refreshToken := token.Encode()
 	c := newFakeKeycloakConfig()
-	c.AccessTokenDuration = time.Duration(1) * time.Hour
+	c.DefaultSessionDuration = time.Duration(1) * time.Hour
 	proxy := newFakeProxy(c).proxy
-	duration := proxy.getAccessCookieExpiration(refreshToken)
+	duration := proxy.getRefreshExpiration(refreshToken)
 	assert.True(t, duration > 0, "duration should be positive")
-	assertAlmostEquals(t, c.AccessTokenDuration, duration)
+	assertAlmostEquals(t, c.DefaultSessionDuration, duration)
 }
 
-func TestGetAccessCookieExpiration_PastExp(t *testing.T) {
+func TestGetRefreshExpiration_PastExp(t *testing.T) {
 	ft := newTestToken("foo")
 	ft.setExpiration(time.Now().AddDate(-1, 0, 0))
 	token := ft.getToken()
 	refreshToken := token.Encode()
 	c := newFakeKeycloakConfig()
-	c.AccessTokenDuration = time.Duration(1) * time.Hour
+	c.DefaultSessionDuration = time.Duration(1) * time.Hour
 	proxy := newFakeProxy(c).proxy
-	duration := proxy.getAccessCookieExpiration(refreshToken)
-	assertAlmostEquals(t, c.AccessTokenDuration, duration)
+	duration := proxy.getRefreshExpiration(refreshToken)
+	assertAlmostEquals(t, c.DefaultSessionDuration, duration)
 }
 
-func TestGetAccessCookieExpiration_ValidExp(t *testing.T) {
+func TestGetRefreshExpiration_ValidExp(t *testing.T) {
 	ft := newTestToken("foo")
 	token := ft.getToken()
 	refreshToken := token.Encode()
 	c := newFakeKeycloakConfig()
-	c.AccessTokenDuration = time.Duration(1) * time.Hour
+	c.DefaultSessionDuration = time.Duration(1) * time.Hour
 	proxy := newFakeProxy(c).proxy
-	duration := proxy.getAccessCookieExpiration(refreshToken)
+	duration := proxy.getRefreshExpiration(refreshToken)
 	val, ok, _ := ft.claims.TimeClaim("exp")
 	assert.True(t, ok)
 	expectedDuration := time.Until(val)

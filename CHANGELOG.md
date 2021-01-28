@@ -11,10 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The `detect-ajax` option to prevent redirection for requests with a `X-Requested-With: XMLHttpRequest` header
 
+### Removed
+
+- The `access-token-duration` in favor of `default-session-duration`, which controls all data and not only `access-token` as the config was supposed to control
+
 ### Fixed
 
 - Trigger offline access token when there's `offline_access` in scopes instead of just `offline` to adhere to the [spec](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess)
 - Multiple requests cancelling each other due to all sharing a dynamic key that's cleaned by the fastest
+- Access cookie expiration date same as token expiration causing requests to be denied when there's a valid refresh token
+- Wrong expiration dates due to parsing the refresh-token as if it were an id-token
 
 ## [2.3.0] - 2018-07-30
 

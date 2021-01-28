@@ -115,7 +115,7 @@ func (r *oauthProxy) dropAccessTokenCookie(req *http.Request, w http.ResponseWri
 }
 
 func (r *oauthProxy) dropTicketCookie(req *http.Request, w http.ResponseWriter, tck *ticket) {
-	r.dropCookie(w, req.Host, r.config.CookieTicketName, tck.encodeTicket(), r.config.TicketDuration)
+	r.dropCookie(w, req.Host, r.config.CookieTicketName, tck.encodeTicket(), r.config.DefaultSessionDuration)
 }
 
 // dropRefreshTokenCookie drops a refresh token cookie from the response

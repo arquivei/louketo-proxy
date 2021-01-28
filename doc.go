@@ -58,6 +58,7 @@ const (
 	debugURL         = "/debug/pprof"
 
 	claimAudience       = "aud"
+	claimExpiration     = "exp"
 	claimPreferredName  = "preferred_username"
 	claimRealmAccess    = "realm_access"
 	claimResourceAccess = "resource_access"
@@ -254,10 +255,8 @@ type Config struct {
 	// EnableCompression enables gzip compression for response
 	EnableCompression bool `json:"enable-compression" yaml:"enable-compression" usage:"enable gzip compression for response"`
 
-	// AccessTokenDuration is default duration applied to the access token cookie
-	AccessTokenDuration time.Duration `json:"access-token-duration" yaml:"access-token-duration" usage:"fallback cookie duration for the access token when using refresh tokens"`
-	// TicketDuration is default duration applied to the ticket cookie
-	TicketDuration time.Duration `json:"ticket-duration" yaml:"ticket-duration" usage:"duration of cookie that holds the ticket"`
+	// DefaultSessionDuration is default duration applied to the every data when there's no explicit duration or infinite lifetime (to prevent data lying around)
+	DefaultSessionDuration time.Duration `json:"default-session-duration" yaml:"default-session-duration" usage:"fallback duration all data stored in cookies and store"`
 	// ClientAuthMethod defines the method for authenticating the oauth client to the server
 	ClientAuthMethod string `json:"client-auth-method" yaml:"client-auth-method" usage:"the auth method to use with oauth (secret-basic, secret-body)" env:"CLIENT_AUTH_METHOD"`
 	// CookieDomain is a list of domains the cookie is available to

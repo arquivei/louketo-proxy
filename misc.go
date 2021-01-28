@@ -111,18 +111,17 @@ func (r *oauthProxy) redirectToAuthorization(w http.ResponseWriter, req *http.Re
 	return r.revokeProxy(w, req)
 }
 
-// getAccessCookieExpiration calculates the expiration of the access token cookie
-func (r *oauthProxy) getAccessCookieExpiration(refresh string) time.Duration {
-	// notes: by default the duration of the access token will be the configuration option, if
+// getRefreshExpiration calculates the expiration of the access token cookie
+func (r *oauthProxy) getRefreshExpiration(refresh string) time.Duration {
+	// notes: by default the duration of the token will be the configuration option, if
 	// however we can decode the refresh token, we will set the duration to the duration of the
 	// refresh token
-	duration := r.config.AccessTokenDuration
-	if _, ident, err := parseToken(refresh); err == nil {
-		delta := time.Until(ident.ExpiresAt)
-		if delta > 0 {
-			duration = delta
+	duration := r.config.DefaultSessionDuration
+	if expiration, err := getTokenTTL(refresh); err == nil {
+		if expiration > 0 {
+			duration = expiration
 		}
-		r.log.Debug("parsed refresh token with new duration", zap.Duration("new duration", delta))
+		r.log.Debug("parsed refresh token with new duration", zap.Duration("new duration", duration))
 	} else {
 		r.log.Debug("refresh token is opaque and cannot be used to extend calculated duration")
 	}

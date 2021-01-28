@@ -266,7 +266,7 @@ func (r *oauthProxy) authenticationMiddleware() func(http.Handler) http.Handler 
 					}
 					if refreshExpiresIn == 0 {
 						// refresh token expiry claims not available: try to parse refresh token
-						refreshExpiresIn = r.getAccessCookieExpiration(refresh)
+						refreshExpiresIn = r.getRefreshExpiration(refresh)
 					}
 
 					r.log.Info("injecting the refreshed access token cookie",
@@ -285,7 +285,7 @@ func (r *oauthProxy) authenticationMiddleware() func(http.Handler) http.Handler 
 						}
 					}
 					// step: inject the refreshed access token
-					r.dropAccessTokenCookie(req.WithContext(ctx), w, accessToken, accessExpiresIn)
+					r.dropAccessTokenCookie(req.WithContext(ctx), w, accessToken, refreshExpiresIn)
 
 					// step: inject the renewed refresh token
 					if newRefreshToken != "" {
@@ -310,12 +310,12 @@ func (r *oauthProxy) authenticationMiddleware() func(http.Handler) http.Handler 
 							// refreshes the expiration date
 							r.dropTicketCookie(req.WithContext(ctx), w, tck)
 
-							go func(tck *ticket, encrypted string) {
-								if err := r.StoreRefreshToken(tck, encrypted, refreshExpiresIn); err != nil {
+							go func(tck *ticket, encrypted string, ttl time.Duration) {
+								if err := r.StoreRefreshToken(tck, encrypted, ttl); err != nil {
 									r.log.Error("failed to store refresh token", zap.Error(err))
 									return
 								}
-							}(tck, encryptedRefreshToken)
+							}(tck, encryptedRefreshToken, refreshExpiresIn)
 						} else {
 							r.dropRefreshTokenCookie(req.WithContext(ctx), w, encryptedRefreshToken, refreshExpiresIn)
 						}

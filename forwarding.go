@@ -127,7 +127,7 @@ func (r *oauthProxy) forwardProxyHandler() func(*http.Request, *http.Response) {
 				}
 
 				// step: parse the token
-				token, identity, err := parseToken(resp.AccessToken)
+				token, identity, err := parseOIDCToken(resp.AccessToken)
 				if err != nil {
 					r.log.Error("failed to parse the access token", zap.Error(err))
 					// step: we should probably hope and reschedule here

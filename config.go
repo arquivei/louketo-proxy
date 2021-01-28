@@ -34,8 +34,7 @@ func newDefaultConfig() *Config {
 	hostnames = append(hostnames, []string{"localhost", "127.0.0.1"}...)
 
 	return &Config{
-		AccessTokenDuration:           time.Duration(720) * time.Hour,
-		TicketDuration:                time.Duration(720) * time.Hour,
+		DefaultSessionDuration:        time.Duration(720) * time.Hour,
 		ClientAuthMethod:              authMethodBasic,
 		CookieTicketName:              ticketCookie,
 		CookieAccessName:              accessCookie,
