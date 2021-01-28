@@ -30,7 +30,6 @@ import (
 	uuid "github.com/gofrs/uuid"
 
 	"github.com/PuerkitoBio/purell"
-	"github.com/coreos/go-oidc/jose"
 	"github.com/go-chi/chi/middleware"
 	"github.com/unrolled/secure"
 	"go.uber.org/zap"
@@ -222,7 +221,7 @@ func (r *oauthProxy) authenticationMiddleware() func(http.Handler) http.Handler 
 						zap.String("email", user.email))
 
 					// step: check if the user has refresh token
-					refresh, _, err := r.retrieveRefreshToken(req.WithContext(ctx), user)
+					refresh, _, err := r.retrieveRefreshToken(req.WithContext(ctx))
 					if err != nil {
 						r.log.Error("unable to find a refresh token for user",
 							zap.String("client_ip", clientIP),
@@ -300,15 +299,23 @@ func (r *oauthProxy) authenticationMiddleware() func(http.Handler) http.Handler 
 						}
 
 						if r.useStore() {
-							go func(old, new jose.JWT, encrypted string) {
-								if err := r.DeleteRefreshToken(old); err != nil {
-									r.log.Error("failed to remove old token", zap.Error(err))
-								}
-								if err := r.StoreRefreshToken(new, encrypted, refreshExpiresIn); err != nil {
+							tck, err := decodeTicketFromRequest(req, r.config)
+							if err != nil {
+								r.log.Error("there's no ticket to identify the refresh token in the store", zap.Error(err))
+
+								next.ServeHTTP(w, req.WithContext(r.redirectToAuthorization(w, req)))
+								return
+							}
+
+							// refreshes the expiration date
+							r.dropTicketCookie(req.WithContext(ctx), w, tck)
+
+							go func(tck *ticket, encrypted string) {
+								if err := r.StoreRefreshToken(tck, encrypted, refreshExpiresIn); err != nil {
 									r.log.Error("failed to store refresh token", zap.Error(err))
 									return
 								}
-							}(user.token, token, encryptedRefreshToken)
+							}(tck, encryptedRefreshToken)
 						} else {
 							r.dropRefreshTokenCookie(req.WithContext(ctx), w, encryptedRefreshToken, refreshExpiresIn)
 						}

@@ -114,6 +114,10 @@ func (r *oauthProxy) dropAccessTokenCookie(req *http.Request, w http.ResponseWri
 	r.dropCookieWithChunks(req, w, r.config.CookieAccessName, value, duration)
 }
 
+func (r *oauthProxy) dropTicketCookie(req *http.Request, w http.ResponseWriter, tck *ticket) {
+	r.dropCookie(w, req.Host, r.config.CookieTicketName, tck.encodeTicket(), r.config.TicketDuration)
+}
+
 // dropRefreshTokenCookie drops a refresh token cookie from the response
 func (r *oauthProxy) dropRefreshTokenCookie(req *http.Request, w http.ResponseWriter, value string, duration time.Duration) {
 	r.dropCookieWithChunks(req, w, r.config.CookieRefreshName, value, duration)
@@ -133,6 +137,7 @@ func (r *oauthProxy) writeStateParameterCookie(req *http.Request, w http.Respons
 
 // clearAllCookies is just a helper function for the below
 func (r *oauthProxy) clearAllCookies(req *http.Request, w http.ResponseWriter) {
+	r.clearTicketCookie(req, w)
 	r.clearAccessTokenCookie(req, w)
 	r.clearRefreshTokenCookie(req, w)
 }
@@ -165,4 +170,8 @@ func (r *oauthProxy) clearAccessTokenCookie(req *http.Request, w http.ResponseWr
 			break
 		}
 	}
+}
+
+func (r *oauthProxy) clearTicketCookie(req *http.Request, w http.ResponseWriter) {
+	r.dropCookie(w, req.Host, r.config.CookieTicketName, "", -10*time.Hour)
 }

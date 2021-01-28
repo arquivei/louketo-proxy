@@ -35,7 +35,9 @@ func newDefaultConfig() *Config {
 
 	return &Config{
 		AccessTokenDuration:           time.Duration(720) * time.Hour,
+		TicketDuration:                time.Duration(720) * time.Hour,
 		ClientAuthMethod:              authMethodBasic,
+		CookieTicketName:              ticketCookie,
 		CookieAccessName:              accessCookie,
 		CookieRefreshName:             refreshCookie,
 		EnableAuthorizationCookies:    true,
@@ -92,7 +94,7 @@ func (r *Config) isValid() error {
 		return errors.New("max-idle-connections must be a number > 0")
 	}
 	if r.MaxIdleConnsPerHost < 0 || r.MaxIdleConnsPerHost > r.MaxIdleConns {
-		return errors.New("maxi-idle-connections-per-host must be a number > 0 and <= max-idle-connections")
+		return errors.New("max-idle-connections-per-host must be a number > 0 and <= max-idle-connections")
 	}
 	if r.SameSiteCookie != "" && r.SameSiteCookie != SameSiteStrict && r.SameSiteCookie != SameSiteLax && r.SameSiteCookie != SameSiteNone {
 		return errors.New("same-site-cookie must be one of Strict|Lax|None")

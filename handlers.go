@@ -195,12 +195,22 @@ func (r *oauthProxy) oauthCallbackHandler(w http.ResponseWriter, req *http.Reque
 			expiration = time.Until(ident.ExpiresAt)
 		}
 
-		switch r.useStore() {
-		case true:
-			if err = r.StoreRefreshToken(token, encrypted, expiration); err != nil {
-				r.log.Warn("failed to save the refresh token in the store", zap.Error(err))
+		if r.useStore() {
+			// step: configure a ticket to identify the session without depending on dynamic tokens
+			var tck *ticket
+			tck, err = newTicket()
+			if err != nil {
+				r.log.Error("unable to create random ticket for session", zap.Error(err))
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
-		default:
+
+			if err = r.StoreRefreshToken(tck, encrypted, expiration); err != nil {
+				r.log.Error("failed to save the refresh token in the store", zap.Error(err))
+			} else {
+				r.dropTicketCookie(req, w, tck)
+			}
+		} else {
 			r.dropRefreshTokenCookie(req, w, encrypted, expiration)
 		}
 	} else {
@@ -318,22 +328,28 @@ func (r *oauthProxy) logoutHandler(w http.ResponseWriter, req *http.Request) {
 	// step: can either use the id token or the refresh token
 	identityToken := user.token.Encode()
 	//nolint:vetshadow
-	if refresh, _, err := r.retrieveRefreshToken(req, user); err == nil {
+	if refresh, _, err := r.retrieveRefreshToken(req); err == nil {
 		identityToken = refresh
 	}
+
+	// step: check if the user has a state session and if so revoke it
+	if r.useStore() {
+		tck, err := decodeTicketFromRequest(req, r.config)
+		if err != nil {
+			r.log.Error("unable to identify user session, there's no ticket", zap.Error(err))
+		} else {
+			go func(tck *ticket) {
+				if err = r.DeleteRefreshToken(tck); err != nil {
+					r.log.Error("unable to remove the refresh token from store", zap.Error(err))
+				}
+			}(tck)
+		}
+	}
+
 	r.clearAllCookies(req, w)
 
 	// @metric increment the logout counter
 	oauthTokensMetric.WithLabelValues("logout").Inc()
-
-	// step: check if the user has a state session and if so revoke it
-	if r.useStore() {
-		go func() {
-			if err = r.DeleteRefreshToken(user.token); err != nil {
-				r.log.Error("unable to remove the refresh token from store", zap.Error(err))
-			}
-		}()
-	}
 
 	// set the default revocation url
 	revokeDefault := ""
@@ -492,11 +508,16 @@ func (r *oauthProxy) proxyMetricsHandler(w http.ResponseWriter, req *http.Reques
 }
 
 // retrieveRefreshToken retrieves the refresh token from store or cookie
-func (r *oauthProxy) retrieveRefreshToken(req *http.Request, user *userContext) (token, encrypted string, err error) {
-	switch r.useStore() {
-	case true:
-		token, err = r.GetRefreshToken(user.token)
-	default:
+func (r *oauthProxy) retrieveRefreshToken(req *http.Request) (token, encrypted string, err error) {
+	if r.useStore() {
+		var tck *ticket
+		tck, err = decodeTicketFromRequest(req, r.config)
+		if err != nil {
+			return
+		}
+
+		token, err = r.GetRefreshToken(tck)
+	} else {
 		token, err = r.getRefreshTokenFromCookie(req)
 	}
 	if err != nil {

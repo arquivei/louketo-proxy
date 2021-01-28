@@ -64,6 +64,7 @@ const (
 	claimResourceRoles  = "roles"
 	claimGroups         = "groups"
 
+	ticketCookie       = "kc-ticket"
 	accessCookie       = "kc-access"
 	refreshCookie      = "kc-state"
 	requestURICookie   = "request_uri"
@@ -255,10 +256,14 @@ type Config struct {
 
 	// AccessTokenDuration is default duration applied to the access token cookie
 	AccessTokenDuration time.Duration `json:"access-token-duration" yaml:"access-token-duration" usage:"fallback cookie duration for the access token when using refresh tokens"`
+	// TicketDuration is default duration applied to the ticket cookie
+	TicketDuration time.Duration `json:"ticket-duration" yaml:"ticket-duration" usage:"duration of cookie that holds the ticket"`
 	// ClientAuthMethod defines the method for authenticating the oauth client to the server
 	ClientAuthMethod string `json:"client-auth-method" yaml:"client-auth-method" usage:"the auth method to use with oauth (secret-basic, secret-body)" env:"CLIENT_AUTH_METHOD"`
 	// CookieDomain is a list of domains the cookie is available to
 	CookieDomain string `json:"cookie-domain" yaml:"cookie-domain" usage:"domain the access cookie is available to, defaults host header"`
+	// CookieTicketName is the name of the cookie holding the ticket which identifies an session
+	CookieTicketName string `json:"cookie-ticket-name" yaml:"cookie-ticket-name" usage:"name of the cookie holding the ticket that identifies an session"`
 	// CookieAccessName is the name of the access cookie holding the access token
 	CookieAccessName string `json:"cookie-access-name" yaml:"cookie-access-name" usage:"name of the cookie use to hold the access token"`
 	// CookieRefreshName is the name of the refresh cookie

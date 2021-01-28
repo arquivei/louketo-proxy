@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Trigger offline access token when there's `offline_access` in scopes instead of just `offline` to adhere to the [spec](https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess)
+- Multiple requests cancelling each other due to all sharing a dynamic key that's cleaned by the fastest
 
 ## [2.3.0] - 2018-07-30
 

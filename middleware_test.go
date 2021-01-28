@@ -301,7 +301,7 @@ func (f *fakeProxy) performUserLogin(uri string) error {
 		return err
 	}
 	for _, c := range resp.Cookies() {
-		if c.Name == f.config.CookieAccessName || c.Name == f.config.CookieRefreshName {
+		if c.Name == f.config.CookieAccessName || c.Name == f.config.CookieRefreshName || c.Name == f.config.CookieTicketName {
 			f.cookies[c.Name] = &http.Cookie{
 				Name:   c.Name,
 				Path:   "/",
